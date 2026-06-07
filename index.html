@@ -326,9 +326,84 @@ footer.closing{
 }
 footer.closing p{color:var(--muted);font-size:16px;margin:0;}
 footer.closing .big{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:#fff;margin-bottom:12px;}
+
+/* ===== NEW INTERACTIVE & ANIMATION STYLES ===== */
+#progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--teal), var(--red));
+  width: 0%;
+  z-index: 1000;
+  transition: width 0.1s ease-out;
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.8s cubic-bezier(0.5, 0, 0, 1);
+}
+.reveal.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.copy-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--muted);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s;
+  z-index: 10;
+}
+.copy-btn:hover {
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+.copy-btn.copied {
+  background: rgba(169,220,118,0.2);
+  color: var(--green);
+  border-color: var(--green);
+}
+
+#mouse-glow {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 800px;
+  height: 800px;
+  background: radial-gradient(circle, rgba(123, 97, 255, 0.04) 0%, transparent 60%);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 9999;
+  transition: opacity 0.3s;
+  mix-blend-mode: screen;
+}
+
+nav a.active {
+  color: var(--text);
+}
+nav a.active::after {
+  width: 100%;
+}
+
 </style>
 </head>
 <body>
+
+<div id="progress-bar"></div>
+<div id="mouse-glow"></div>
+
 
 <nav aria-label="Main navigation">
   <a href="#summary">TL;DR</a>
@@ -358,12 +433,12 @@ footer.closing .big{font-family:'Syne',sans-serif;font-size:24px;font-weight:800
 <main class="container">
 
 <!-- TL;DR -->
-<section id="summary">
+<section class="reveal" id="summary">
   <span class="section-label">Quick summary</span>
   <h2><span class="num">0</span>TL;DR — For the Impatient</h2>
   <p>The binary takes exactly 64 bytes of input, scrambles them through a <strong>secret linear transform</strong>, and verifies the result against a hardcoded target array. Rather than spending hours reverse-engineering the math by reading raw assembly, we treat the binary as a black box. We <em>probe it 65 times with carefully chosen inputs</em> to completely recover the hidden 64×64 transformation matrix. By computing the matrix inverse modulo 256, we can solve for the exact flag instantly.</p>
 
-  <div class="diagram-wrap">
+  <div class="diagram-wrap reveal">
     <div class="diagram-title">The Three Methodological Steps</div>
     <table>
       <thead><tr><th>Phase</th><th>Action</th><th>Mechanism</th></tr></thead>
@@ -377,12 +452,12 @@ footer.closing .big{font-family:'Syne',sans-serif;font-size:24px;font-weight:800
 </section>
 
 <!-- RECON -->
-<section id="recon">
+<section class="reveal" id="recon">
   <span class="section-label">Step 1</span>
   <h2><span class="num">1</span>First Look — Reconnaissance</h2>
   <p>Every reverse engineering challenge should begin with three fundamental commands. They reveal the landscape of the binary <em>before</em> you ever launch a decompiler.</p>
 
-  <div class="code-wrap">
+  <div class="code-wrap reveal">
     <span class="code-label">bash</span>
     <pre><code><span class="cm"># Three commands, all the context you need</span>
 file my-favorite-ingredient
@@ -398,9 +473,9 @@ strings -n 8 my-favorite-ingredient | head -30</code></pre>
     <li><strong>Compact Scope:</strong> The core logic is isolated in a single verification function, preventing us from falling down rabbit holes.</li>
   </ul>
 
-  <div class="callout info">
-    <div class="callout-icon">💡</div>
-    <div class="callout-body">
+  <div class="callout reveal info">
+    <div class="callout reveal-icon">💡</div>
+    <div class="callout reveal-body">
       <strong>Pro tip: Symbols are a gift</strong>
       <p>An unstripped CTF binary is like receiving an exam with the answer key attached. Always verify if symbols exist before diving into pseudocode. When function names are readable, your workload is cut in half.</p>
     </div>
@@ -408,7 +483,7 @@ strings -n 8 my-favorite-ingredient | head -30</code></pre>
 
   <p>Loading the binary into <strong>Ghidra</strong> exposes the core verification logic immediately. In simplified pseudocode, it looks like this:</p>
 
-  <div class="code-wrap">
+  <div class="code-wrap reveal">
     <span class="code-label">pseudocode (from Ghidra)</span>
     <pre><code><span class="kw">if</span> (input_len != <span class="num-lit">64</span>) <span class="fn">exit</span>(<span class="num-lit">1</span>);
 
@@ -421,11 +496,11 @@ strings -n 8 my-favorite-ingredient | head -30</code></pre>
 </section>
 
 <!-- KEY INSIGHT -->
-<section id="insight">
+<section class="reveal" id="insight">
   <span class="section-label">The big brain moment</span>
   <h2><span class="num">2</span>The Key Insight — It's All Linear, Baby</h2>
 
-  <div class="meme-box">
+  <div class="meme-box reveal">
     <div class="meme-text">Challenge title: "My Favorite Ingredient"<br>One ingredient. One repeated operation.<br>That ingredient? <span style="color:var(--accent);">Linearity.</span></div>
     <div class="meme-sub">When the challenge literally gives you the methodology in the name 🧂</div>
   </div>
@@ -436,7 +511,7 @@ strings -n 8 my-favorite-ingredient | head -30</code></pre>
   <p>Imagine a magic blender. You drop in 64 distinct ingredients (bytes), and it produces 64 newly mixed liquids. The blender is <strong>linear</strong> if every resulting liquid is simply a fixed ratio of the input ingredients added together. There are no exotic reactions—no squaring, no conditional statements, just pure addition and multiplication by fixed amounts.</p>
   <p>Matrix inversion is the mathematical equivalent of <strong>un-blending a smoothie using a secret recipe card</strong>. If you know the exact percentage of apples and bananas used, and they were purely mixed, you can calculate precisely what went in! Mathematically, this is expressed as: <em>output = M · v + c</em>, where <em>M</em> is a 64×64 matrix representing the "recipe ratios," <em>v</em> is your 64-byte input, and <em>c</em> is a constant offset.</p>
 
-  <div class="diagram-wrap" style="text-align:center">
+  <div class="diagram-wrap reveal" style="text-align:center">
     <div class="diagram-title">The Binary Execution Pipeline</div>
     <svg width="100%" viewBox="0 0 700 90" style="max-width:680px" aria-label="Pipeline diagram from Input to memcmp">
       <defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#a9b1d6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
@@ -463,28 +538,28 @@ strings -n 8 my-favorite-ingredient | head -30</code></pre>
   <p>A linear map over 64 bytes can be <strong>completely reconstructed</strong> using just 65 deliberate inputs. The methodology is as follows:</p>
 
   <div class="steps" style="margin-top:32px">
-    <div class="step">
+    <div class="step reveal">
       <div class="step-line"><div class="step-dot" style="border-color:#7b61ff; color:#7b61ff;">1</div><div class="step-connector"></div></div>
       <div class="step-body">
         <h3>Establish the Baseline</h3>
         <p>Input 64 zero bytes. The resulting output will be <em>M · 0 + c = c</em>. This allows us to capture the constant offset instantly.</p>
       </div>
     </div>
-    <div class="step">
+    <div class="step reveal">
       <div class="step-line"><div class="step-dot" style="border-color:#ffd866; color:#ffd866;">2</div><div class="step-connector"></div></div>
       <div class="step-body">
         <h3>Probe Individually</h3>
         <p>For each byte position <em>i</em>: send an input where only byte <em>i</em> is <code>1</code> and the rest are <code>0</code>. The output yields <em>M · eᵢ + c</em>.</p>
       </div>
     </div>
-    <div class="step">
+    <div class="step reveal">
       <div class="step-line"><div class="step-dot" style="border-color:#78dce8; color:#78dce8;">3</div><div class="step-connector"></div></div>
       <div class="step-body">
         <h3>Extract the Columns</h3>
         <p>Subtract the baseline (modulo 256) from the output. This calculation extracts exactly column <em>i</em> of matrix <em>M</em>.</p>
       </div>
     </div>
-    <div class="step">
+    <div class="step reveal">
       <div class="step-line"><div class="step-dot" style="border-color:#ff6188; color:#ff6188;">4</div></div>
       <div class="step-body">
         <h3>Matrix Recovered</h3>
@@ -509,16 +584,16 @@ strings -n 8 my-favorite-ingredient | head -30</code></pre>
 </section>
 
 <!-- STEP BY STEP SOLVE -->
-<section id="solve">
+<section class="reveal" id="solve">
   <span class="section-label">Step 2</span>
   <h2><span class="num">3</span>Step-by-Step Solve</h2>
 
   <h3>Step 3.1 — Intercept the Working Buffer</h3>
   <p>The binary only outputs a binary pass/fail state. To reconstruct the matrix, we need visibility into the 64-byte transformed buffer just before the <code>memcmp</code> executes. We can achieve this using <strong>GDB</strong> to halt execution and dump the memory.</p>
 
-  <div class="callout warn">
-    <div class="callout-icon">⚠️</div>
-    <div class="callout-body">
+  <div class="callout reveal warn">
+    <div class="callout reveal-icon">⚠️</div>
+    <div class="callout reveal-body">
       <strong>Mind Your Registers! (System V AMD64 ABI)</strong>
       <p>The <code>memcmp</code> function requires two memory pointers. Under the System V AMD64 ABI (the calling convention dictating how functions pass data in Linux), the first argument resides in <code>$rdi</code>, and the second in <code>$rsi</code>. If Ghidra decompiles to <code>memcmp(tmp, expected, 64)</code>, our working buffer <code>tmp</code> is located in <code>$rdi</code>! Dumping the wrong register will extract the hardcoded target instead, ruining the matrix recovery.</p>
     </div>
@@ -526,7 +601,7 @@ strings -n 8 my-favorite-ingredient | head -30</code></pre>
 
   <p><strong>Action:</strong> Create a file named <code>dump.gdb</code> in your working directory and paste the following commands to automate the memory extraction:</p>
 
-  <div class="code-wrap">
+  <div class="code-wrap reveal">
     <span class="code-label">dump.gdb</span>
     <pre><code><span class="cm"># Halt execution right at the comparison</span>
 break *<span class="num-lit">0x&lt;memcmp_address_from_ghidra&gt;</span>
@@ -548,7 +623,7 @@ run &lt; /tmp/probe.bin</code></pre>
   <h3>Step 3.3 — Execute the 65 Probes</h3>
   <p>Now we implement the probing logic in Python. This script automates running GDB 65 times and extracting the resulting matrix columns.</p>
 
-  <div class="code-wrap">
+  <div class="code-wrap reveal">
     <span class="code-label">python — matrix recovery</span>
     <pre><code><span class="kw">import</span> subprocess, os
 
@@ -581,9 +656,9 @@ matrix_cols = []
 <span class="fn">print</span>(<span class="str">"64x64 Matrix successfully recovered!"</span>)</code></pre>
   </div>
 
-  <div class="callout danger">
-    <div class="callout-icon">🚫</div>
-    <div class="callout-body">
+  <div class="callout reveal danger">
+    <div class="callout reveal-icon">🚫</div>
+    <div class="callout reveal-body">
       <strong>Crucial: The Modulo 256 Constraint</strong>
       <p>Python integers have infinite precision. If you subtract bytes without applying <code>% 256</code>, Python returns negative integers instead of correct byte wrap-arounds. This will silently corrupt your matrix and yield a garbage flag.</p>
     </div>
@@ -592,7 +667,7 @@ matrix_cols = []
   <h3>Step 3.4 — Matrix Inversion & Flag Retrieval</h3>
   <p>With <em>M</em>, <em>c</em>, and target <em>t</em> in our possession, we apply elementary algebra modulo 256:</p>
 
-  <div class="diagram-wrap" style="text-align:center;padding:32px">
+  <div class="diagram-wrap reveal" style="text-align:center;padding:32px">
     <p style="font-family:'JetBrains Mono',monospace;font-size:20px;color:#b4a4ff;letter-spacing:.05em;margin:0; font-weight:700;">
       M · v + c = t<br>
       <span style="color:var(--muted);font-size:14px; font-weight:400;">(subtract c)</span><br>
@@ -604,7 +679,7 @@ matrix_cols = []
 
   <p>We invert the matrix using Gaussian elimination over the Z/256Z ring.</p>
 
-  <div class="code-wrap">
+  <div class="code-wrap reveal">
     <span class="code-label">python — inversion & solve</span>
     <pre><code><span class="kw">def</span> <span class="fn">mat_inv_mod256</span>(M):
     <span class="str">"""Gaussian elimination modulo 256."""</span>
@@ -651,9 +726,9 @@ flag = <span class="fn">bytes</span>(
 <span class="fn">print</span>(<span class="str">f"Flag: {flag.decode()}"</span>)</code></pre>
   </div>
 
-  <div class="callout warn">
-    <div class="callout-icon">🔄</div>
-    <div class="callout-body">
+  <div class="callout reveal warn">
+    <div class="callout reveal-icon">🔄</div>
+    <div class="callout reveal-body">
       <strong>Matrix Orientation is Paramount</strong>
       <p>The probing phase yields <em>columns</em>, but standard array syntax expects <em>rows</em>. A failure to transpose the matrix will output plausible, printable ASCII characters that ultimately fail the binary check. Always transpose before inversion!</p>
     </div>
@@ -662,7 +737,7 @@ flag = <span class="fn">bytes</span>(
   <h3>Step 3.5 — Verification</h3>
   <p>Never rely solely on visual inspection. Pipe the flag directly back into the binary to confirm its validity.</p>
 
-  <div class="code-wrap">
+  <div class="code-wrap reveal">
     <span class="code-label">bash — proof of concept</span>
     <pre><code>echo -n 'GPNCTF{ju57_oNE_0NstruCtI0ns_IS_A1L_YOu_n33d_M4yBe123979AfKFndH}' \
   | ./my-favorite-ingredient
@@ -674,12 +749,12 @@ flag = <span class="fn">bytes</span>(
 </section>
 
 <!-- FORWARD VS REVERSE DIAGRAM -->
-<section>
+<section class="reveal">
   <span class="section-label">Visual summary</span>
   <h2><span class="num">4</span>The Big Picture</h2>
   <p>The true elegance of this methodology lies in its abstraction. We completely ignored the convoluted assembly instructions and instead interrogated the binary systematically.</p>
 
-  <div class="diagram-wrap">
+  <div class="diagram-wrap reveal">
     <div class="diagram-title">Symmetric Operations</div>
     <svg width="100%" viewBox="0 0 680 200" style="max-width:680px">
       <defs><marker id="ar2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#a9b1d6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
@@ -720,10 +795,10 @@ flag = <span class="fn">bytes</span>(
 </section>
 
 <!-- FLAG -->
-<section>
+<section class="reveal">
   <span class="section-label">The Prize</span>
   <h2><span class="num">5</span>Flag</h2>
-  <div class="flag-box">
+  <div class="flag-box reveal">
     <div class="flag-label">🚩 Verified by Binary</div>
     <div class="flag-value">GPNCTF{ju57_oNE_0NstruCtI0ns_IS_A1L_YOu_n33d_M4yBe123979AfKFndH}</div>
     <p style="margin-top:16px; font-size:14px; color:var(--muted); font-weight:500;">(Leetspeak translation: "just one instructions is all you need". The grammar might be flawed, but our math is absolute!)</p>
@@ -731,28 +806,28 @@ flag = <span class="fn">bytes</span>(
 </section>
 
 <!-- TAKEAWAYS -->
-<section id="takeaways">
+<section class="reveal" id="takeaways">
   <span class="section-label">Wisdom</span>
   <h2><span class="num">6</span>Key Takeaways</h2>
 
-  <div class="callout info">
-    <div class="callout-icon">🔬</div>
-    <div class="callout-body">
+  <div class="callout reveal info">
+    <div class="callout reveal-icon">🔬</div>
+    <div class="callout reveal-body">
       <strong>Verify Linearity First</strong>
       <p>Testing for linearity using a few chosen inputs takes mere minutes and can save hours of tedious manual assembly analysis. Always check for this property before opening the decompiler.</p>
     </div>
   </div>
-  <div class="callout info">
-    <div class="callout-icon">📏</div>
-    <div class="callout-body">
+  <div class="callout reveal info">
+    <div class="callout reveal-icon">📏</div>
+    <div class="callout reveal-body">
       <strong>Fixed Length Indicates Fixed Block Transforms</strong>
       <p>A strict input length check (like exactly 64 bytes) is a powerful indicator of a fixed-width block transformation—an ideal candidate for matrix recovery techniques.</p>
     </div>
   </div>
   
-  <div class="callout info" style="margin-top:40px; background:linear-gradient(135deg, rgba(123,97,255,0.1), transparent);">
-    <div class="callout-icon">🌍</div>
-    <div class="callout-body">
+  <div class="callout reveal info" style="margin-top:40px; background:linear-gradient(135deg, rgba(123,97,255,0.1), transparent);">
+    <div class="callout reveal-icon">🌍</div>
+    <div class="callout reveal-body">
       <strong>The Fundamental Lesson</strong>
       <p>A verification algorithm that <em>appears</em> cryptographic is entirely distinct from one that <em>is</em> cryptographic. Computational complexity is an illusion if the underlying operation remains linear and deterministic. Black-box dynamic analysis cuts cleanly through any obfuscation layered on top of linear operations.</p>
     </div>
@@ -810,6 +885,75 @@ flag = <span class="fn">bytes</span>(
       }, 1000);
     }
   });
+
+    // === NEW INTERACTIVE JS ===
+    // 1. Reading Progress Bar
+    window.addEventListener('scroll', () => {
+      const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+      const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      const scrolled = (winScroll / height) * 100;
+      document.getElementById('progress-bar').style.width = scrolled + '%';
+    });
+
+    // 2. Mouse Glow Effect
+    const glow = document.getElementById('mouse-glow');
+    window.addEventListener('mousemove', (e) => {
+      glow.style.left = e.clientX + 'px';
+      glow.style.top = e.clientY + 'px';
+    });
+
+    // 3. Scroll Reveal
+    const revealElements = document.querySelectorAll('.reveal');
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('active');
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+    revealElements.forEach(el => revealObserver.observe(el));
+
+    // 4. Copy Code Buttons
+    const codeWraps = document.querySelectorAll('.code-wrap');
+    codeWraps.forEach(wrap => {
+      const btn = document.createElement('button');
+      btn.className = 'copy-btn';
+      btn.innerText = 'Copy';
+      wrap.appendChild(btn);
+
+      btn.addEventListener('click', () => {
+        const code = wrap.querySelector('code').innerText;
+        navigator.clipboard.writeText(code).then(() => {
+          btn.innerText = 'Copied!';
+          btn.classList.add('copied');
+          setTimeout(() => {
+            btn.innerText = 'Copy';
+            btn.classList.remove('copied');
+          }, 2000);
+        });
+      });
+    });
+
+    // 5. Active Nav Link on Scroll
+    const sections = document.querySelectorAll('section');
+    const navLinks = document.querySelectorAll('nav a');
+    window.addEventListener('scroll', () => {
+      let current = '';
+      sections.forEach(section => {
+        const sectionTop = section.offsetTop;
+        if (scrollY >= sectionTop - 100) {
+          current = section.getAttribute('id');
+        }
+      });
+      navLinks.forEach(link => {
+        link.classList.remove('active');
+        if (link.getAttribute('href').substring(1) === current) {
+          link.classList.add('active');
+        }
+      });
+    });
+
 </script>
 
 </body>
