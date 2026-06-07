@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Favorite Ingredient - CTF Writeup by optimus_prime</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ===== RESET & BASE ===== */
+*{box-sizing:border-box;margin:0;padding:0;scroll-behavior:smooth;}
+:root{
+  --bg:#090a0f;
+  --bg2:#12141d;
+  --bg3:#181b26;
+  --card:#1a1c29;
+  --border:#2a2d42;
+  --accent:#7b61ff;
+  --accent-glow:rgba(123, 97, 255, 0.4);
+  --accent2:#ff6188;
+  --gold:#ffd866;
+  --teal:#78dce8;
+  --text:#f8f8f2;
+  --muted:#a9b1d6;
+  --code-bg:#10121a;
+  --code-border:#25293d;
+  --green:#a9dc76;
+  --red:#ff6188;
+  --radius:16px;
+  --shadow:0 8px 32px rgba(0,0,0,0.4);
+}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Inter',sans-serif;
+  font-size:16px;
+  line-height:1.8;
+  padding:0 0 80px;
+  overflow-x:hidden;
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+  100% { transform: translateY(0px); }
+}
+@keyframes glow {
+  0% { box-shadow: 0 0 10px var(--accent-glow); }
+  50% { box-shadow: 0 0 25px var(--accent-glow); }
+  100% { box-shadow: 0 0 10px var(--accent-glow); }
+}
+
+/* ===== NAVBAR ===== */
+nav{
+  position:sticky;
+  top:0;
+  background:rgba(9, 10, 15, 0.85);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  border-bottom:1px solid rgba(255,255,255,0.05);
+  z-index:100;
+  padding:16px 40px;
+  display:flex;
+  justify-content:center;
+  gap:40px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+nav a{
+  color:var(--muted);
+  text-decoration:none;
+  font-size:13px;
+  font-weight:600;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  transition:all 0.3s ease;
+  position: relative;
+}
+nav a::after {
+  content: '';
+  position: absolute;
+  width: 0%;
+  height: 2px;
+  bottom: -4px;
+  left: 0;
+  background: var(--accent);
+  transition: width 0.3s ease;
+}
+nav a:hover{
+  color:var(--text);
+}
+nav a:hover::after{
+  width: 100%;
+}
+
+/* ===== HERO ===== */
+header.hero{
+  background:radial-gradient(circle at 50% 0%, #1e1b38 0%, #090a0f 70%);
+  border-bottom:1px solid rgba(255,255,255,0.05);
+  padding:100px 40px 80px;
+  position:relative;
+  overflow:hidden;
+  text-align: center;
+}
+header.hero::before{
+  content:'';position:absolute;inset:0;
+  background:url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjA1KSIvPjwvc3ZnPg==');
+  pointer-events:none;
+  opacity: 0.5;
+}
+.hero-tag{
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(123,97,255,.1);border:1px solid rgba(123,97,255,.3);
+  color:#b4a4ff;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  padding:6px 16px;border-radius:30px;margin-bottom:24px;
+  box-shadow: 0 0 20px rgba(123,97,255,0.2);
+}
+header.hero h1{
+  font-family:'Syne',sans-serif;font-size:clamp(40px,6vw,72px);font-weight:800;
+  line-height:1.1;margin-bottom:24px;
+  background:linear-gradient(135deg,#ffffff 0%,#b4a4ff 50%,#7b61ff 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  animation: float 6s ease-in-out infinite;
+}
+.hero-subtitle{
+  font-size:20px;color:var(--muted);max-width:640px;margin:0 auto 40px;
+  font-weight: 400;
+}
+.hero-meta{
+  display:flex;flex-wrap:wrap;justify-content: center;gap:12px;
+}
+.pill{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:8px 18px;border-radius:30px;font-size:13px;font-weight:600;
+  text-decoration:none; backdrop-filter: blur(4px);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.pill:hover {
+  transform: translateY(-2px);
+}
+.pill-purple{background:rgba(123,97,255,.1);color:#b4a4ff;border:1px solid rgba(123,97,255,.3);}
+.pill-purple:hover{box-shadow: 0 4px 15px rgba(123,97,255,0.2);}
+.pill-gold{background:rgba(255,216,102,.1);color:#ffd866;border:1px solid rgba(255,216,102,.3);}
+.pill-teal{background:rgba(120,220,232,.1);color:#78dce8;border:1px solid rgba(120,220,232,.3);}
+.pill-pink{background:rgba(255,97,136,.1);color:#ff6188;border:1px solid rgba(255,97,136,.3);}
+
+/* ===== LAYOUT ===== */
+.container{max-width:880px;margin:0 auto;padding:0 32px;}
+
+/* ===== SECTIONS ===== */
+section{padding:80px 0 0; scroll-margin-top:80px;}
+.section-label{
+  font-size:12px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--accent);margin-bottom:16px; display: block;
+}
+h2{
+  font-family:'Syne',sans-serif;font-size:32px;font-weight:800;
+  color:#fff;margin-bottom:24px;
+  display:flex;align-items:center;gap:16px;
+}
+h2 .num{
+  width:36px;height:36px;border-radius:10px;
+  background:linear-gradient(135deg, var(--accent), #5634d1);
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;font-weight:800;color:#fff;flex-shrink:0;
+  box-shadow: 0 4px 15px var(--accent-glow);
+}
+h3{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;color:#e2e6f3;margin:32px 0 12px;}
+p{color:var(--muted);margin-bottom:20px;}
+p strong{color:var(--text);font-weight:600;}
+p em{color:#b4a4ff;font-style:normal;font-weight:500;}
+
+/* ===== CALLOUT BOXES ===== */
+.callout{
+  border-radius:var(--radius);padding:24px;margin:32px 0;
+  display:flex;gap:16px;align-items:flex-start;
+  box-shadow: var(--shadow);
+  border: 1px solid rgba(255,255,255,0.05);
+}
+.callout-icon{font-size:24px;flex-shrink:0;}
+.callout-body{flex:1;}
+.callout-body strong{display:block;font-size:15px;font-weight:700;margin-bottom:6px;}
+.callout-body p{font-size:15px;margin:0;line-height:1.6;}
+.callout.info{background:rgba(123,97,255,.05);border-left:4px solid var(--accent);}
+.callout.info .callout-body strong{color:#b4a4ff;}
+.callout.warn{background:rgba(255,216,102,.05);border-left:4px solid var(--gold);}
+.callout.warn .callout-body strong{color:var(--gold);}
+.callout.danger{background:rgba(255,97,136,.05);border-left:4px solid var(--red);}
+.callout.danger .callout-body strong{color:var(--red);}
+.callout.success{background:rgba(169,220,118,.05);border-left:4px solid var(--green);}
+.callout.success .callout-body strong{color:var(--green);}
+
+/* ===== CODE BLOCKS ===== */
+.code-wrap{position:relative;margin:32px 0; box-shadow: var(--shadow); border-radius:var(--radius);}
+.code-label{
+  font-size:11px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;
+  color:#8a94b5;background:var(--code-bg);
+  border:1px solid var(--code-border);border-bottom:none;
+  padding:10px 20px;border-radius:var(--radius) var(--radius) 0 0;display:inline-block;
+}
+pre{
+  background:var(--code-bg);border:1px solid var(--code-border);
+  border-radius:0 var(--radius) var(--radius) var(--radius);
+  padding:24px;overflow-x:auto;margin:0;
+}
+pre.no-label{border-radius:var(--radius);}
+code{
+  font-family:'JetBrains Mono',monospace;font-size:14px;
+  line-height:1.7;color:#c0caf5;
+}
+.kw{color:#ff79c6;}
+.fn{color:#8be9fd;}
+.str{color:#f1fa8c;}
+.cm{color:#6272a4;}
+.num-lit{color:#bd93f9;}
+.var{color:#50fa7b;}
+
+/* ===== DIAGRAM BOXES ===== */
+.diagram-wrap{
+  background:var(--card);border:1px solid rgba(255,255,255,0.05);
+  border-radius:var(--radius);padding:32px;margin:32px 0;
+  box-shadow: var(--shadow);
+}
+.diagram-title{font-size:12px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:24px;}
+
+/* ===== STEP CARDS ===== */
+.steps{display:flex;flex-direction:column;gap:0;}
+.step{
+  display:flex;gap:0;position:relative;
+}
+.step-line{display:flex;flex-direction:column;align-items:center;width:48px;flex-shrink:0;}
+.step-dot{
+  width:40px;height:40px;border-radius:50%;background:var(--card);
+  border: 2px solid var(--accent);
+  display:flex;align-items:center;justify-content:center;
+  font-size:15px;font-weight:800;color:var(--accent);flex-shrink:0;z-index:1;
+  box-shadow: 0 0 10px rgba(123,97,255,0.2);
+}
+.step-connector{width:2px;background:rgba(255,255,255,0.1);flex:1;margin:8px 0;}
+.step-body{flex:1;padding:4px 0 40px 24px;}
+.step-body h3{margin-top:0;margin-bottom:12px;font-size:18px;}
+.step-body p{font-size:15px; margin:0;}
+
+/* ===== FLAG BOX ===== */
+.flag-box{
+  background:linear-gradient(135deg, rgba(123,97,255,0.1), rgba(120,220,232,0.1));
+  border:2px solid var(--accent);border-radius:var(--radius);
+  padding:40px 32px;margin:40px 0;text-align:center;
+  box-shadow: 0 10px 40px rgba(123,97,255,0.15);
+  position: relative; overflow: hidden;
+}
+.flag-box::before {
+  content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+  background: linear-gradient(to right, transparent, rgba(255,255,255,0.1), transparent);
+  transform: skewX(-20deg); animation: shine 4s infinite;
+}
+@keyframes shine {
+  0% { left: -100%; }
+  20% { left: 200%; }
+  100% { left: 200%; }
+}
+.flag-label{font-size:12px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--teal);margin-bottom:16px;}
+.flag-value{
+  font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;
+  color:#fff;word-break:break-all;background:rgba(0,0,0,.4);
+  padding:16px 24px;border-radius:12px;display:inline-block;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+/* ===== TABLE ===== */
+table{width:100%;border-collapse:collapse;margin:24px 0;font-size:15px; background:var(--card); border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow);}
+thead{background:rgba(255,255,255,0.03);}
+th{text-align:left;padding:16px 20px;color:var(--muted);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.1em;}
+td{padding:16px 20px;color:var(--muted);border-top:1px solid rgba(255,255,255,0.05);}
+td strong{color:var(--text);}
+tr:hover td{background:rgba(123,97,255,.05);}
+
+/* ===== MEME / HIGHLIGHT ===== */
+.meme-box{
+  background:linear-gradient(145deg, var(--card), #161824);
+  border:1px solid rgba(255,255,255,0.05);border-radius:var(--radius);
+  padding:40px;margin:32px 0;text-align:center;
+  box-shadow: var(--shadow);
+}
+.meme-text{font-size:24px;font-weight:800;font-family:'Syne',sans-serif;line-height:1.4;color:#fff;}
+.meme-sub{font-size:14px;color:var(--muted);margin-top:12px; font-weight:500;}
+
+/* ===== INTERACTIVE MATRIX VIZ ===== */
+.matrix-demo{
+  background:var(--card);border:1px solid rgba(255,255,255,0.05);border-radius:var(--radius);
+  padding:32px;margin:40px 0; box-shadow: var(--shadow);
+}
+.matrix-demo h3{font-size:16px;font-weight:700;color:#fff;margin-bottom:8px;text-transform:uppercase;letter-spacing:.1em; margin-top:0;}
+.matrix-grid{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:24px;}
+.m-cell{
+  width:32px;height:32px;border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;font-family:'JetBrains Mono',monospace;color:rgba(255,255,255,.9);
+  transition:all .3s cubic-bezier(0.4, 0, 0.2, 1);cursor:default;
+  background:rgba(123,97,255,.1);
+  border: 1px solid rgba(123,97,255,0.2);
+}
+.demo-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+.demo-btn{
+  background:linear-gradient(135deg, var(--accent), #5634d1);
+  border:none; color:#fff;
+  font-size:14px;font-weight:700;padding:12px 24px;border-radius:8px;cursor:pointer;
+  font-family:'Inter',sans-serif;transition:all .2s;
+  box-shadow: 0 4px 15px rgba(123,97,255,0.4);
+}
+.demo-btn:hover{transform:translateY(-2px); box-shadow: 0 6px 20px rgba(123,97,255,0.6);}
+.demo-btn:active{transform:translateY(0);}
+.demo-output{
+  font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--teal);
+  background:var(--code-bg);padding:12px 16px;border-radius:8px;flex:1;min-width:200px;
+  border:1px solid rgba(120,220,232,0.2); box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* ===== DIVIDER ===== */
+.divider{border:none;height:1px;background:linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);margin:64px 0;}
+
+/* ===== CLOSING ===== */
+footer.closing{
+  background:linear-gradient(135deg,rgba(123,97,255,.05),rgba(120,220,232,.05));
+  border:1px solid rgba(255,255,255,0.05);border-radius:var(--radius);
+  padding:48px;text-align:center;
+}
+footer.closing p{color:var(--muted);font-size:16px;margin:0;}
+footer.closing .big{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:#fff;margin-bottom:12px;}
+</style>
+</head>
+<body>
+
+<nav aria-label="Main navigation">
+  <a href="#summary">TL;DR</a>
+  <a href="#recon">Recon</a>
+  <a href="#insight">Key Insight</a>
+  <a href="#solve">Solve</a>
+  <a href="#takeaways">Takeaways</a>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="container">
+    <div class="hero-tag">✦ CTF Writeup</div>
+    <h1>My Favorite Ingredient</h1>
+    <p class="hero-subtitle">How to make a binary confess its own secret transform — without reading a single line of assembly.</p>
+    <div class="hero-meta">
+      <span class="pill pill-purple">⚙ Reversing</span>
+      <span class="pill pill-gold">★ 79 pts</span>
+      <span class="pill pill-teal">GPNCTF 2026</span>
+      <span class="pill pill-pink">Challenge by: intrigus</span>
+      <span class="pill pill-purple" style="border-color:var(--accent);">Writeup by: optimus_prime (Team e0_)</span>
+      <a href="https://gpn24.ctf.kitctf.de/challenges#challenge-my-favorite-ingredient" target="_blank" class="pill pill-teal" style="margin-top: 12px; width: 100%; justify-content: center; background:rgba(120,220,232,0.15);">🔥 View Challenge</a>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+
+<!-- TL;DR -->
+<section id="summary">
+  <span class="section-label">Quick summary</span>
+  <h2><span class="num">0</span>TL;DR — For the Impatient</h2>
+  <p>The binary takes exactly 64 bytes of input, scrambles them through a <strong>secret linear transform</strong>, and verifies the result against a hardcoded target array. Rather than spending hours reverse-engineering the math by reading raw assembly, we treat the binary as a black box. We <em>probe it 65 times with carefully chosen inputs</em> to completely recover the hidden 64×64 transformation matrix. By computing the matrix inverse modulo 256, we can solve for the exact flag instantly.</p>
+
+  <div class="diagram-wrap">
+    <div class="diagram-title">The Three Methodological Steps</div>
+    <table>
+      <thead><tr><th>Phase</th><th>Action</th><th>Mechanism</th></tr></thead>
+      <tbody>
+        <tr><td><strong>1. Probe</strong></td><td>Execute the binary 65 times with chosen inputs.</td><td>Each execution isolates and reveals exactly one column of the hidden matrix.</td></tr>
+        <tr><td><strong>2. Recover</strong></td><td>Reconstruct the 64×64 matrix <em>M</em> and offset <em>c</em>.</td><td>Linear transformations are strictly defined by their behavior on basis vectors.</td></tr>
+        <tr><td><strong>3. Invert</strong></td><td>Solve <em>v = M⁻¹ · (target − c) mod 256</em>.</td><td>Because the challenge demands a unique flag, the matrix is guaranteed to be invertible.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- RECON -->
+<section id="recon">
+  <span class="section-label">Step 1</span>
+  <h2><span class="num">1</span>First Look — Reconnaissance</h2>
+  <p>Every reverse engineering challenge should begin with three fundamental commands. They reveal the landscape of the binary <em>before</em> you ever launch a decompiler.</p>
+
+  <div class="code-wrap">
+    <span class="code-label">bash</span>
+    <pre><code><span class="cm"># Three commands, all the context you need</span>
+file my-favorite-ingredient
+checksec --file=my-favorite-ingredient
+strings -n 8 my-favorite-ingredient | head -30</code></pre>
+  </div>
+
+  <p>From this simple recon, we gather vital intelligence:</p>
+  <ul style="margin:0 0 24px 24px;color:var(--muted);line-height:2;">
+    <li><strong>Unstripped Binary:</strong> Function names are fully preserved. We don't have to decipher hundreds of anonymous <code>sub_401XXX</code> blocks.</li>
+    <li><strong>No Packers or Obfuscation:</strong> The instructions we see in Ghidra are exactly what the CPU executes.</li>
+    <li><strong>Fully Deterministic:</strong> There are no time-based seeds or random number generators. The transform is a fixed mathematical function.</li>
+    <li><strong>Compact Scope:</strong> The core logic is isolated in a single verification function, preventing us from falling down rabbit holes.</li>
+  </ul>
+
+  <div class="callout info">
+    <div class="callout-icon">💡</div>
+    <div class="callout-body">
+      <strong>Pro tip: Symbols are a gift</strong>
+      <p>An unstripped CTF binary is like receiving an exam with the answer key attached. Always verify if symbols exist before diving into pseudocode. When function names are readable, your workload is cut in half.</p>
+    </div>
+  </div>
+
+  <p>Loading the binary into <strong>Ghidra</strong> exposes the core verification logic immediately. In simplified pseudocode, it looks like this:</p>
+
+  <div class="code-wrap">
+    <span class="code-label">pseudocode (from Ghidra)</span>
+    <pre><code><span class="kw">if</span> (input_len != <span class="num-lit">64</span>) <span class="fn">exit</span>(<span class="num-lit">1</span>);
+
+<span class="fn">transform_buffer</span>(input, tmp);  <span class="cm">// ← the mystery box</span>
+
+<span class="kw">return</span> <span class="fn">memcmp</span>(tmp, expected, <span class="num-lit">64</span>) == <span class="num-lit">0</span>;  <span class="cm">// standard memory comparison</span></code></pre>
+  </div>
+
+  <p>This structure is highly promising. The <code>expected</code> target buffer is <strong>hardcoded in the `.data` section</strong>. The transformation is static. The final check is a simple <code>memcmp</code> rather than a cryptographic hash function like SHA-256. This means the transformation is mathematically reversible.</p>
+</section>
+
+<!-- KEY INSIGHT -->
+<section id="insight">
+  <span class="section-label">The big brain moment</span>
+  <h2><span class="num">2</span>The Key Insight — It's All Linear, Baby</h2>
+
+  <div class="meme-box">
+    <div class="meme-text">Challenge title: "My Favorite Ingredient"<br>One ingredient. One repeated operation.<br>That ingredient? <span style="color:var(--accent);">Linearity.</span></div>
+    <div class="meme-sub">When the challenge literally gives you the methodology in the name 🧂</div>
+  </div>
+
+  <p>Before dissecting the assembly, we must answer one critical question: <strong>Is the transformation linear?</strong> If it is, we can bypass the assembly entirely.</p>
+
+  <h3>What is a linear transform? (Explain Like I'm 5 Edition 🍼)</h3>
+  <p>Imagine a magic blender. You drop in 64 distinct ingredients (bytes), and it produces 64 newly mixed liquids. The blender is <strong>linear</strong> if every resulting liquid is simply a fixed ratio of the input ingredients added together. There are no exotic reactions—no squaring, no conditional statements, just pure addition and multiplication by fixed amounts.</p>
+  <p>Matrix inversion is the mathematical equivalent of <strong>un-blending a smoothie using a secret recipe card</strong>. If you know the exact percentage of apples and bananas used, and they were purely mixed, you can calculate precisely what went in! Mathematically, this is expressed as: <em>output = M · v + c</em>, where <em>M</em> is a 64×64 matrix representing the "recipe ratios," <em>v</em> is your 64-byte input, and <em>c</em> is a constant offset.</p>
+
+  <div class="diagram-wrap" style="text-align:center">
+    <div class="diagram-title">The Binary Execution Pipeline</div>
+    <svg width="100%" viewBox="0 0 700 90" style="max-width:680px" aria-label="Pipeline diagram from Input to memcmp">
+      <defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#a9b1d6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+      <rect x="20" y="20" width="140" height="50" rx="8" fill="#10121a" stroke="#7b61ff" stroke-width="2"/>
+      <text x="90" y="47" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="13" fill="#b4a4ff" font-weight="700">Input v</text>
+      <text x="90" y="62" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" fill="#6272a4">64 bytes</text>
+      <line x1="160" y1="45" x2="225" y2="45" stroke="#a9b1d6" stroke-width="2" marker-end="url(#ar)" fill="none"/>
+      
+      <rect x="225" y="20" width="140" height="50" rx="8" fill="#10121a" stroke="#ffd866" stroke-width="2"/>
+      <text x="295" y="45" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="12" fill="#ffd866" font-weight="700">M · v + c</text>
+      <text x="295" y="60" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" fill="#6272a4">transform</text>
+      <line x1="365" y1="45" x2="430" y2="45" stroke="#a9b1d6" stroke-width="2" marker-end="url(#ar)" fill="none"/>
+      
+      <rect x="430" y="20" width="140" height="50" rx="8" fill="#10121a" stroke="#78dce8" stroke-width="2"/>
+      <text x="500" y="45" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="12" fill="#78dce8" font-weight="700">memcmp</text>
+      <text x="500" y="60" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" fill="#6272a4">vs target</text>
+      
+      <text x="600" y="49" font-family="Inter,sans-serif" font-size="14" fill="#a9dc76" font-weight="700">✓ / ✗</text>
+    </svg>
+    <p style="font-size:13px;margin:16px 0 0;color:var(--muted)">Our objective: Reverse the arrow. Start with the known target and recover <em>v</em>.</p>
+  </div>
+
+  <h3>Why Linearity is Your Superpower</h3>
+  <p>A linear map over 64 bytes can be <strong>completely reconstructed</strong> using just 65 deliberate inputs. The methodology is as follows:</p>
+
+  <div class="steps" style="margin-top:32px">
+    <div class="step">
+      <div class="step-line"><div class="step-dot" style="border-color:#7b61ff; color:#7b61ff;">1</div><div class="step-connector"></div></div>
+      <div class="step-body">
+        <h3>Establish the Baseline</h3>
+        <p>Input 64 zero bytes. The resulting output will be <em>M · 0 + c = c</em>. This allows us to capture the constant offset instantly.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-line"><div class="step-dot" style="border-color:#ffd866; color:#ffd866;">2</div><div class="step-connector"></div></div>
+      <div class="step-body">
+        <h3>Probe Individually</h3>
+        <p>For each byte position <em>i</em>: send an input where only byte <em>i</em> is <code>1</code> and the rest are <code>0</code>. The output yields <em>M · eᵢ + c</em>.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-line"><div class="step-dot" style="border-color:#78dce8; color:#78dce8;">3</div><div class="step-connector"></div></div>
+      <div class="step-body">
+        <h3>Extract the Columns</h3>
+        <p>Subtract the baseline (modulo 256) from the output. This calculation extracts exactly column <em>i</em> of matrix <em>M</em>.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-line"><div class="step-dot" style="border-color:#ff6188; color:#ff6188;">4</div></div>
+      <div class="step-body">
+        <h3>Matrix Recovered</h3>
+        <p>With 1 baseline run and 64 probes (65 total), the entire 64×64 matrix is ours. No assembly analysis required.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- INTERACTIVE MATRIX VIZ -->
+  <div class="matrix-demo">
+    <h3>Interactive Demonstration: Probing the Matrix</h3>
+    <p style="font-size:14px; margin-bottom:20px; color:var(--muted);">Click the button below to simulate sending a unit-vector probe. Notice how the flash isolates and extracts a specific column matrix representation!</p>
+    <div class="matrix-grid" id="matrix-grid">
+      <!-- Generated by JS -->
+    </div>
+    <div class="demo-row">
+      <button class="demo-btn" onclick="runDemoProbe()">[+] Transmit Probe</button>
+      <div class="demo-output" id="demo-output">Awaiting transmission...</div>
+    </div>
+  </div>
+
+</section>
+
+<!-- STEP BY STEP SOLVE -->
+<section id="solve">
+  <span class="section-label">Step 2</span>
+  <h2><span class="num">3</span>Step-by-Step Solve</h2>
+
+  <h3>Step 3.1 — Intercept the Working Buffer</h3>
+  <p>The binary only outputs a binary pass/fail state. To reconstruct the matrix, we need visibility into the 64-byte transformed buffer just before the <code>memcmp</code> executes. We can achieve this using <strong>GDB</strong> to halt execution and dump the memory.</p>
+
+  <div class="callout warn">
+    <div class="callout-icon">⚠️</div>
+    <div class="callout-body">
+      <strong>Mind Your Registers! (System V AMD64 ABI)</strong>
+      <p>The <code>memcmp</code> function requires two memory pointers. Under the System V AMD64 ABI (the calling convention dictating how functions pass data in Linux), the first argument resides in <code>$rdi</code>, and the second in <code>$rsi</code>. If Ghidra decompiles to <code>memcmp(tmp, expected, 64)</code>, our working buffer <code>tmp</code> is located in <code>$rdi</code>! Dumping the wrong register will extract the hardcoded target instead, ruining the matrix recovery.</p>
+    </div>
+  </div>
+
+  <p><strong>Action:</strong> Create a file named <code>dump.gdb</code> in your working directory and paste the following commands to automate the memory extraction:</p>
+
+  <div class="code-wrap">
+    <span class="code-label">dump.gdb</span>
+    <pre><code><span class="cm"># Halt execution right at the comparison</span>
+break *<span class="num-lit">0x&lt;memcmp_address_from_ghidra&gt;</span>
+
+<span class="cm"># Dump 64 bytes from $rdi (the first argument) and continue</span>
+commands
+silent
+dump binary memory /tmp/buf.bin $rdi $rdi+<span class="num-lit">64</span>
+continue
+end
+
+<span class="cm"># Run while piping our binary probe from a file</span>
+run &lt; /tmp/probe.bin</code></pre>
+  </div>
+
+  <h3>Step 3.2 — Extract the Target Array</h3>
+  <p>We need the hardcoded target bytes to solve the equation. Navigate to the <code>.data</code> section in Ghidra, locate the <code>expected</code> array, right-click, select <strong>Copy Special</strong> -> <strong>Python Byte String</strong>, and paste it securely into your exploit script.</p>
+
+  <h3>Step 3.3 — Execute the 65 Probes</h3>
+  <p>Now we implement the probing logic in Python. This script automates running GDB 65 times and extracting the resulting matrix columns.</p>
+
+  <div class="code-wrap">
+    <span class="code-label">python — matrix recovery</span>
+    <pre><code><span class="kw">import</span> subprocess, os
+
+<span class="kw">def</span> <span class="fn">run_probe</span>(inp: <span class="var">bytes</span>) -> <span class="var">bytes</span>:
+    <span class="str">"""Write probe to file, execute via GDB, and read the dumped buffer."""</span>
+    <span class="kw">with</span> <span class="fn">open</span>(<span class="str">'/tmp/probe.bin'</span>, <span class="str">'wb'</span>) <span class="kw">as</span> f:
+        f.<span class="fn">write</span>(inp)
+    subprocess.<span class="fn">run</span>(
+        [<span class="str">'gdb'</span>, <span class="str">'-batch'</span>, <span class="str">'-x'</span>, <span class="str">'dump.gdb'</span>, <span class="str">'./my-favorite-ingredient'</span>],
+        capture_output=<span class="kw">True</span>
+    )
+    <span class="kw">return</span> <span class="fn">open</span>(<span class="str">'/tmp/buf.bin'</span>, <span class="str">'rb'</span>).<span class="fn">read</span>()
+
+<span class="cm"># ── 1: Capture the constant offset (Baseline) ──</span>
+baseline = <span class="fn">run_probe</span>(<span class="fn">bytes</span>(<span class="num-lit">64</span>))
+<span class="fn">print</span>(<span class="str">f"Baseline (c) retrieved."</span>)
+
+<span class="cm"># ── 2: Probe the matrix columns ──</span>
+matrix_cols = []
+
+<span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="num-lit">64</span>):
+    probe = <span class="fn">bytearray</span>(<span class="num-lit">64</span>)
+    probe[i] = <span class="num-lit">1</span>  <span class="cm"># Create unit vector</span>
+    output = <span class="fn">run_probe</span>(<span class="fn">bytes</span>(probe))
+
+    <span class="cm"># Modulo 256 subtraction isolates the column data</span>
+    col = <span class="fn">bytes</span>((b - base) % <span class="num-lit">256</span> <span class="kw">for</span> b, base <span class="kw">in</span> <span class="fn">zip</span>(output, baseline))
+    matrix_cols.<span class="fn">append</span>(col)
+
+<span class="fn">print</span>(<span class="str">"64x64 Matrix successfully recovered!"</span>)</code></pre>
+  </div>
+
+  <div class="callout danger">
+    <div class="callout-icon">🚫</div>
+    <div class="callout-body">
+      <strong>Crucial: The Modulo 256 Constraint</strong>
+      <p>Python integers have infinite precision. If you subtract bytes without applying <code>% 256</code>, Python returns negative integers instead of correct byte wrap-arounds. This will silently corrupt your matrix and yield a garbage flag.</p>
+    </div>
+  </div>
+
+  <h3>Step 3.4 — Matrix Inversion & Flag Retrieval</h3>
+  <p>With <em>M</em>, <em>c</em>, and target <em>t</em> in our possession, we apply elementary algebra modulo 256:</p>
+
+  <div class="diagram-wrap" style="text-align:center;padding:32px">
+    <p style="font-family:'JetBrains Mono',monospace;font-size:20px;color:#b4a4ff;letter-spacing:.05em;margin:0; font-weight:700;">
+      M · v + c = t<br>
+      <span style="color:var(--muted);font-size:14px; font-weight:400;">(subtract c)</span><br>
+      M · v = t − c<br>
+      <span style="color:var(--muted);font-size:14px; font-weight:400;">(multiply by M⁻¹)</span><br>
+      <span style="color:var(--green); font-size:24px;">v = M⁻¹ · (t − c)</span>
+    </p>
+  </div>
+
+  <p>We invert the matrix using Gaussian elimination over the Z/256Z ring.</p>
+
+  <div class="code-wrap">
+    <span class="code-label">python — inversion & solve</span>
+    <pre><code><span class="kw">def</span> <span class="fn">mat_inv_mod256</span>(M):
+    <span class="str">"""Gaussian elimination modulo 256."""</span>
+    n = <span class="fn">len</span>(M)
+    aug = [[M[i][j] <span class="kw">for</span> j <span class="kw">in</span> <span class="fn">range</span>(n)] + [<span class="num-lit">1</span> <span class="kw">if</span> i==j <span class="kw">else</span> <span class="num-lit">0</span> <span class="kw">for</span> j <span class="kw">in</span> <span class="fn">range</span>(n)]
+            <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(n)]
+
+    <span class="kw">for</span> col <span class="kw">in</span> <span class="fn">range</span>(n):
+        <span class="cm"># Locate an invertible pivot (odd number)</span>
+        pivot = <span class="kw">None</span>
+        <span class="kw">for</span> row <span class="kw">in</span> <span class="fn">range</span>(col, n):
+            <span class="kw">if</span> aug[row][col] % <span class="num-lit">2</span> == <span class="num-lit">1</span>:
+                pivot = row; <span class="kw">break</span>
+        aug[col], aug[pivot] = aug[pivot], aug[col]
+
+        <span class="cm"># Compute modular inverse (Requires Python 3.8+)</span>
+        inv_piv = <span class="fn">pow</span>(aug[col][col], -<span class="num-lit">1</span>, <span class="num-lit">256</span>)
+
+        <span class="cm"># Eliminate column elements</span>
+        aug[col] = [(v * inv_piv) % <span class="num-lit">256</span> <span class="kw">for</span> v <span class="kw">in</span> aug[col]]
+        <span class="kw">for</span> r <span class="kw">in</span> <span class="fn">range</span>(n):
+            <span class="kw">if</span> r != col:
+                f = aug[r][col]
+                aug[r] = [(aug[r][j] - f * aug[col][j]) % <span class="num-lit">256</span>
+                          <span class="kw">for</span> j <span class="kw">in</span> <span class="fn">range</span>(<span class="num-lit">2</span>*n)]
+
+    <span class="kw">return</span> [[aug[i][n+j] % <span class="num-lit">256</span> <span class="kw">for</span> j <span class="kw">in</span> <span class="fn">range</span>(n)] <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(n)]
+
+
+<span class="cm"># Prepare the Right-Hand Side (RHS)</span>
+target = <span class="fn">bytes</span>(...)  <span class="cm"># Hardcoded array extracted from Ghidra</span>
+rhs = <span class="fn">bytes</span>((t - b) % <span class="num-lit">256</span> <span class="kw">for</span> t, b <span class="kw">in</span> <span class="fn">zip</span>(target, baseline))
+
+<span class="cm"># Transpose columns into rows for proper matrix multiplication</span>
+M_rows = [[matrix_cols[j][i] <span class="kw">for</span> j <span class="kw">in</span> <span class="fn">range</span>(<span class="num-lit">64</span>)] <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="num-lit">64</span>)]
+M_inv = <span class="fn">mat_inv_mod256</span>(M_rows)
+
+<span class="cm"># Multiply M_inv by RHS to retrieve the flag</span>
+flag = <span class="fn">bytes</span>(
+    <span class="fn">sum</span>(M_inv[i][j] * rhs[j] <span class="kw">for</span> j <span class="kw">in</span> <span class="fn">range</span>(<span class="num-lit">64</span>)) % <span class="num-lit">256</span>
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="num-lit">64</span>)
+)
+
+<span class="fn">print</span>(<span class="str">f"Flag: {flag.decode()}"</span>)</code></pre>
+  </div>
+
+  <div class="callout warn">
+    <div class="callout-icon">🔄</div>
+    <div class="callout-body">
+      <strong>Matrix Orientation is Paramount</strong>
+      <p>The probing phase yields <em>columns</em>, but standard array syntax expects <em>rows</em>. A failure to transpose the matrix will output plausible, printable ASCII characters that ultimately fail the binary check. Always transpose before inversion!</p>
+    </div>
+  </div>
+
+  <h3>Step 3.5 — Verification</h3>
+  <p>Never rely solely on visual inspection. Pipe the flag directly back into the binary to confirm its validity.</p>
+
+  <div class="code-wrap">
+    <span class="code-label">bash — proof of concept</span>
+    <pre><code>echo -n 'GPNCTF{ju57_oNE_0NstruCtI0ns_IS_A1L_YOu_n33d_M4yBe123979AfKFndH}' \
+  | ./my-favorite-ingredient
+
+<span class="cm"># Output:</span>
+<span class="var">Correct! You found the secret ingredient.</span></code></pre>
+  </div>
+
+</section>
+
+<!-- FORWARD VS REVERSE DIAGRAM -->
+<section>
+  <span class="section-label">Visual summary</span>
+  <h2><span class="num">4</span>The Big Picture</h2>
+  <p>The true elegance of this methodology lies in its abstraction. We completely ignored the convoluted assembly instructions and instead interrogated the binary systematically.</p>
+
+  <div class="diagram-wrap">
+    <div class="diagram-title">Symmetric Operations</div>
+    <svg width="100%" viewBox="0 0 680 200" style="max-width:680px">
+      <defs><marker id="ar2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#a9b1d6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+      
+      <!-- Forward -->
+      <text x="340" y="22" text-anchor="middle" font-family="Inter,sans-serif" font-size="12" font-weight="700" fill="#a9b1d6" letter-spacing=".1em">FORWARD (Binary Execution)</text>
+      <rect x="30" y="35" width="160" height="44" rx="8" fill="#10121a" stroke="#7b61ff" stroke-width="2"/>
+      <text x="110" y="57" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="13" fill="#b4a4ff" font-weight="700">flag (v)</text>
+      <text x="110" y="71" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" fill="#6272a4">unknown input</text>
+      <line x1="190" y1="57" x2="265" y2="57" stroke="#a9b1d6" stroke-width="2" marker-end="url(#ar2)" fill="none"/>
+      
+      <rect x="265" y="35" width="150" height="44" rx="8" fill="#10121a" stroke="#ffd866" stroke-width="2"/>
+      <text x="340" y="57" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="12" fill="#ffd866" font-weight="700">M · v + c</text>
+      <text x="340" y="71" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" fill="#6272a4">transformation</text>
+      <line x1="415" y1="57" x2="490" y2="57" stroke="#a9b1d6" stroke-width="2" marker-end="url(#ar2)" fill="none"/>
+      
+      <rect x="490" y="35" width="160" height="44" rx="8" fill="#10121a" stroke="#78dce8" stroke-width="2"/>
+      <text x="570" y="57" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="13" fill="#78dce8" font-weight="700">target (t)</text>
+      <text x="570" y="71" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" fill="#6272a4">hardcoded bytes</text>
+
+      <!-- Reverse -->
+      <text x="340" y="118" text-anchor="middle" font-family="Inter,sans-serif" font-size="12" font-weight="700" fill="#a9dc76" letter-spacing=".1em">REVERSE (Our Exploitation)</text>
+      <rect x="490" y="130" width="160" height="44" rx="8" fill="#10121a" stroke="#78dce8" stroke-width="2"/>
+      <text x="570" y="152" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="13" fill="#78dce8" font-weight="700">target (t)</text>
+      <text x="570" y="166" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" fill="#6272a4">known data</text>
+      <line x1="490" y1="152" x2="415" y2="152" stroke="#a9dc76" stroke-width="2" marker-end="url(#ar2)" fill="none"/>
+      
+      <rect x="265" y="130" width="150" height="44" rx="8" fill="#10121a" stroke="#a9dc76" stroke-width="2"/>
+      <text x="340" y="152" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="12" fill="#a9dc76" font-weight="700">M⁻¹·(t−c)</text>
+      <text x="340" y="166" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" fill="#6272a4">matrix inversion</text>
+      <line x1="265" y1="152" x2="190" y2="152" stroke="#a9dc76" stroke-width="2" marker-end="url(#ar2)" fill="none"/>
+      
+      <rect x="30" y="130" width="160" height="44" rx="8" fill="#10121a" stroke="#a9dc76" stroke-width="2" style="box-shadow:0 0 15px rgba(169,220,118,0.3);"/>
+      <text x="110" y="152" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="14" fill="#a9dc76" font-weight="800">flag 🎉</text>
+      <text x="110" y="166" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" fill="#6272a4">recovered</text>
+    </svg>
+  </div>
+</section>
+
+<!-- FLAG -->
+<section>
+  <span class="section-label">The Prize</span>
+  <h2><span class="num">5</span>Flag</h2>
+  <div class="flag-box">
+    <div class="flag-label">🚩 Verified by Binary</div>
+    <div class="flag-value">GPNCTF{ju57_oNE_0NstruCtI0ns_IS_A1L_YOu_n33d_M4yBe123979AfKFndH}</div>
+    <p style="margin-top:16px; font-size:14px; color:var(--muted); font-weight:500;">(Leetspeak translation: "just one instructions is all you need". The grammar might be flawed, but our math is absolute!)</p>
+  </div>
+</section>
+
+<!-- TAKEAWAYS -->
+<section id="takeaways">
+  <span class="section-label">Wisdom</span>
+  <h2><span class="num">6</span>Key Takeaways</h2>
+
+  <div class="callout info">
+    <div class="callout-icon">🔬</div>
+    <div class="callout-body">
+      <strong>Verify Linearity First</strong>
+      <p>Testing for linearity using a few chosen inputs takes mere minutes and can save hours of tedious manual assembly analysis. Always check for this property before opening the decompiler.</p>
+    </div>
+  </div>
+  <div class="callout info">
+    <div class="callout-icon">📏</div>
+    <div class="callout-body">
+      <strong>Fixed Length Indicates Fixed Block Transforms</strong>
+      <p>A strict input length check (like exactly 64 bytes) is a powerful indicator of a fixed-width block transformation—an ideal candidate for matrix recovery techniques.</p>
+    </div>
+  </div>
+  
+  <div class="callout info" style="margin-top:40px; background:linear-gradient(135deg, rgba(123,97,255,0.1), transparent);">
+    <div class="callout-icon">🌍</div>
+    <div class="callout-body">
+      <strong>The Fundamental Lesson</strong>
+      <p>A verification algorithm that <em>appears</em> cryptographic is entirely distinct from one that <em>is</em> cryptographic. Computational complexity is an illusion if the underlying operation remains linear and deterministic. Black-box dynamic analysis cuts cleanly through any obfuscation layered on top of linear operations.</p>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- CLOSING -->
+<footer class="closing">
+  <p class="big">My favorite ingredient in any reversing challenge?</p>
+  <p style="font-size: 18px; color:#b4a4ff; margin-top:8px;">Linearity. One ingredient. Sixty-five probes. One flag. 🧂</p>
+  <p style="margin-top:24px;font-size:14px;color:var(--muted); font-weight: 500;">— Written for GPNCTF 2026 · Challenge by: intrigus · Solved & Authored by: optimus_prime (Team e0_)</p>
+</footer>
+
+</main>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const grid = document.getElementById('matrix-grid');
+    const output = document.getElementById('demo-output');
+    
+    // Initialize an 8x8 matrix representation
+    for(let i=0; i<64; i++) {
+      let cell = document.createElement('div');
+      cell.className = 'm-cell';
+      cell.innerText = '0';
+      grid.appendChild(cell);
+    }
+
+    window.runDemoProbe = function() {
+      const cells = document.querySelectorAll('.m-cell');
+      // Matrix scanning animation
+      cells.forEach((c, index) => {
+        setTimeout(() => {
+          c.innerText = Math.floor(Math.random() * 9);
+          c.style.background = `rgba(120, 220, 232, 0.4)`;
+          c.style.borderColor = `rgba(120, 220, 232, 0.8)`;
+          c.style.transform = 'scale(1.1)';
+        }, index * 8);
+      });
+      
+      output.innerText = "Extracting Matrix Column Data...";
+      output.style.color = "#a9dc76";
+      
+      setTimeout(() => {
+        cells.forEach(c => {
+          c.innerText = '0';
+          c.style.background = `rgba(123, 97, 255, 0.1)`;
+          c.style.borderColor = `rgba(123, 97, 255, 0.2)`;
+          c.style.transform = 'scale(1)';
+        });
+        output.innerText = "Column Extracted: [" + Array.from({length:8}, ()=>Math.floor(Math.random()*255)).join(', ') + "]";
+        output.style.color = "var(--teal)";
+      }, 1000);
+    }
+  });
+</script>
+
+</body>
+</html>
